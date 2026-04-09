@@ -81,10 +81,6 @@ sui client switch --env testnet
 - Multi-wallet support
 - Mobile PWA
 
-## Hackathon
-
-Built for the **Myntra Hackathon** — demonstrating Move smart contract development, Sui ecosystem integration, gas optimization, and Web3 frontend connectivity.
-
 ---
 
 Made with ◈ on Sui by Manashvi # SuiFlow-Wallet
