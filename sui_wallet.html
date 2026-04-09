@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SuiFlow Wallet</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --sui:#4DA2FF;--sui2:#0085FF;--sui-glow:rgba(77,162,255,0.25);
+  --bg:#050b14;--bg2:#0a1628;--bg3:#0d1f3c;
+  --card:#0e1c2f;--card2:#112240;
+  --border:rgba(77,162,255,0.15);--border2:rgba(77,162,255,0.3);
+  --text:#e8f4ff;--muted:#5a7fa8;--accent:#00d4aa;
+  --warn:#ff6b35;--success:#00d4aa;
+}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* Grid background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(77,162,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(77,162,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+
+/* Orb glow */
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
+.orb1{width:500px;height:500px;top:-200px;right:-100px;background:radial-gradient(circle,rgba(77,162,255,0.08) 0%,transparent 70%);}
+.orb2{width:400px;height:400px;bottom:-150px;left:-100px;background:radial-gradient(circle,rgba(0,212,170,0.06) 0%,transparent 70%);}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:80px;}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--sui),var(--sui2));display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 16px var(--sui-glow);}
+.brand-name{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--sui);letter-spacing:1px;}
+.network-badge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--card);border:1px solid var(--border);font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;}
+.net-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;padding:0 20px;margin-bottom:16px;}
+.tab{flex:1;padding:9px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
+.tab.active{background:var(--card2);border-color:var(--border2);color:var(--sui);}
+
+/* Balance card */
+.balance-card{margin:0 20px 16px;border-radius:20px;padding:28px 24px;background:linear-gradient(135deg,var(--bg3) 0%,var(--card2) 100%);border:1px solid var(--border2);position:relative;overflow:hidden;}
+.balance-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(77,162,255,0.1) 0%,transparent 70%);}
+.balance-label{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-family:'Space Mono',monospace;}
+.balance-amount{font-family:'Space Mono',monospace;font-size:38px;font-weight:700;color:var(--text);letter-spacing:-1px;margin-bottom:4px;}
+.balance-usd{font-size:14px;color:var(--muted);margin-bottom:20px;}
+.balance-usd span{color:var(--accent);font-weight:600;}
+.wallet-addr{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.25);border-radius:10px;padding:8px 12px;}
+.addr-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);flex:1;}
+.copy-btn{font-size:14px;cursor:pointer;color:var(--sui);opacity:0.7;transition:opacity 0.2s;}
+.copy-btn:hover{opacity:1;}
+.change-badge{position:absolute;top:24px;right:24px;padding:4px 10px;border-radius:20px;background:rgba(0,212,170,0.12);border:1px solid rgba(0,212,170,0.3);font-size:12px;color:var(--accent);font-family:'Space Mono',monospace;font-weight:700;}
+
+/* Quick actions */
+.quick-actions{display:flex;gap:10px;padding:0 20px;margin-bottom:20px;}
+.qa-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:14px;background:var(--card);border:1px solid var(--border);cursor:pointer;transition:all 0.2s;}
+.qa-btn:hover{border-color:var(--border2);background:var(--card2);transform:translateY(-2px);box-shadow:0 8px 24px var(--sui-glow);}
+.qa-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.qa-send .qa-icon{background:linear-gradient(135deg,rgba(77,162,255,0.2),rgba(0,133,255,0.1));border:1px solid rgba(77,162,255,0.3);}
+.qa-receive .qa-icon{background:linear-gradient(135deg,rgba(0,212,170,0.2),rgba(0,212,170,0.1));border:1px solid rgba(0,212,170,0.3);}
+.qa-swap .qa-icon{background:linear-gradient(135deg,rgba(255,107,53,0.2),rgba(255,107,53,0.1));border:1px solid rgba(255,107,53,0.3);}
+.qa-stake .qa-icon{background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(168,85,247,0.1));border:1px solid rgba(168,85,247,0.3);}
+.qa-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;}
+
+/* Section title */
+.sec-title{font-size:12px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:0 20px;margin-bottom:10px;font-family:'Space Mono',monospace;}
+
+/* Tokens list */
+.tokens{padding:0 20px;display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.token-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border-radius:14px;border:1px solid var(--border);transition:all 0.2s;cursor:pointer;}
+.token-item:hover{border-color:var(--border2);background:var(--card2);}
+.token-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.token-info{flex:1;}
+.token-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.token-bal{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);}
+.token-right{text-align:right;}
+.token-usd{font-size:14px;font-weight:600;color:var(--text);font-family:'Space Mono',monospace;}
+.token-change{font-size:11px;margin-top:2px;}
+.pos{color:var(--accent);}
+.neg{color:var(--warn);}
+
+/* Transactions */
+.txns{padding:0 20px;display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.txn-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border-radius:14px;border:1px solid var(--border);}
+.txn-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.txn-sent .txn-icon{background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.25);}
+.txn-received .txn-icon{background:rgba(0,212,170,0.12);border:1px solid rgba(0,212,170,0.25);}
+.txn-contract .txn-icon{background:rgba(77,162,255,0.12);border:1px solid rgba(77,162,255,0.25);}
+.txn-info{flex:1;}
+.txn-type{font-size:13px;font-weight:600;color:var(--text);}
+.txn-hash{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+.txn-right{text-align:right;}
+.txn-amount{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;}
+.txn-time{font-size:10px;color:var(--muted);margin-top:2px;}
+.txn-status{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:20px;}
+.status-ok{background:rgba(0,212,170,0.1);color:var(--accent);border:1px solid rgba(0,212,170,0.2);}
+
+/* NFTs grid */
+.nfts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px;margin-bottom:20px;}
+.nft-card{border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--border);cursor:pointer;transition:all 0.2s;}
+.nft-card:hover{transform:translateY(-3px);border-color:var(--border2);box-shadow:0 12px 30px var(--sui-glow);}
+.nft-img{height:140px;display:flex;align-items:center;justify-content:center;font-size:56px;}
+.nft-info{padding:10px 12px;}
+.nft-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.nft-col{font-size:10px;color:var(--muted);}
+
+/* Send modal */
+.modal-bg{position:fixed;inset:0;z-index:100;background:rgba(5,11,20,0.92);display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{width:100%;max-width:480px;background:var(--bg2);border-radius:24px 24px 0 0;border:1px solid var(--border2);border-bottom:none;padding:24px 20px 40px;}
+.modal-handle{width:40px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 20px;}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:20px;color:var(--text);}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;font-family:'Space Mono',monospace;}
+.form-input{width:100%;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border 0.2s;}
+.form-input:focus{border-color:var(--sui);}
+.form-input::placeholder{color:var(--muted);}
+.gas-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card);border-radius:10px;border:1px solid var(--border);margin-bottom:16px;}
+.gas-label{font-size:12px;color:var(--muted);}
+.gas-val{font-family:'Space Mono',monospace;font-size:12px;color:var(--accent);}
+.btn-primary{width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--sui),var(--sui2));border:none;color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 24px var(--sui-glow);transition:all 0.2s;letter-spacing:0.5px;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 32px var(--sui-glow);}
+.btn-cancel{width:100%;padding:12px;border-radius:14px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Syne',sans-serif;font-size:14px;cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text);}
+
+/* Success toast */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card2);border:1px solid rgba(0,212,170,0.4);border-radius:14px;padding:12px 20px;font-size:13px;color:var(--accent);display:flex;align-items:center;gap:8px;opacity:0;transition:all 0.3s;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;justify-content:space-around;padding:10px 20px 20px;background:var(--bg2);border-top:1px solid var(--border);z-index:10;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 16px;border-radius:12px;transition:all 0.2s;}
+.nav-item.active .nav-icon{color:var(--sui);}
+.nav-item.active .nav-label{color:var(--sui);}
+.nav-icon{font-size:20px;color:var(--muted);}
+.nav-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.8px;font-family:'Space Mono',monospace;}
+
+/* Pages */
+.page{display:none;}
+.page.active{display:block;}
+
+/* Stake page */
+#page-stake{padding:0 20px 20px;}
+.stake-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:12px;}
+.stake-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.validator-name{font-size:15px;font-weight:700;color:var(--text);}
+.validator-apy{font-family:'Space Mono',monospace;font-size:14px;color:var(--accent);font-weight:700;}
+.apy-label{font-size:10px;color:var(--muted);margin-bottom:2px;}
+.stake-stats{display:flex;gap:16px;margin-bottom:14px;}
+.stake-stat{flex:1;}
+.stake-stat-label{font-size:10px;color:var(--muted);margin-bottom:2px;font-family:'Space Mono',monospace;}
+.stake-stat-val{font-size:14px;font-weight:600;color:var(--text);font-family:'Space Mono',monospace;}
+.progress-bar{height:4px;background:var(--bg);border-radius:2px;overflow:hidden;margin-bottom:14px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--sui),var(--accent));border-radius:2px;}
+.btn-stake{width:100%;padding:11px;border-radius:12px;background:linear-gradient(135deg,var(--sui),var(--sui2));border:none;color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.btn-stake:hover{box-shadow:0 6px 20px var(--sui-glow);}
+
+/* Move contracts page */
+#page-contracts{padding:0 20px 20px;}
+.contract-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;}
+.contract-card:hover{border-color:var(--border2);background:var(--card2);}
+.contract-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.contract-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.contract-name{font-size:14px;font-weight:700;color:var(--text);font-family:'Space Mono',monospace;}
+.contract-desc{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+.contract-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.ctag{padding:3px 10px;border-radius:20px;background:rgba(77,162,255,0.1);border:1px solid rgba(77,162,255,0.2);font-size:10px;color:var(--sui);font-family:'Space Mono',monospace;}
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- Send Modal -->
+<div class="modal-bg" id="sendModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Send SUI</div>
+    <div class="form-group">
+      <label class="form-label">Recipient Address</label>
+      <input class="form-input" id="toAddr" placeholder="0x1a2b3c4d..." type="text"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount (SUI)</label>
+      <input class="form-input" id="sendAmt" placeholder="0.00" type="number" oninput="updateGas()"/>
+    </div>
+    <div class="gas-row">
+      <span class="gas-label">⚡ Estimated Gas</span>
+      <span class="gas-val" id="gasEst">~0.00024 SUI</span>
+    </div>
+    <button class="btn-primary" onclick="sendTxn()">Confirm & Send →</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✓ Transaction submitted!</div>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-icon">◈</div>
+      <div class="brand-name">SUIFLOW</div>
+    </div>
+    <div class="network-badge">
+      <div class="net-dot"></div>
+      Testnet
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('wallet',this)">Wallet</button>
+    <button class="tab" onclick="showPage('nfts',this)">NFTs</button>
+    <button class="tab" onclick="showPage('stake',this)">Stake</button>
+    <button class="tab" onclick="showPage('contracts',this)">Contracts</button>
+  </div>
+
+  <!-- WALLET PAGE -->
+  <div id="page-wallet" class="page active">
+    <div class="balance-card">
+      <div class="change-badge">▲ +5.2%</div>
+      <div class="balance-label">Total Balance</div>
+      <div class="balance-amount">1,284.50</div>
+      <div class="balance-usd">≈ <span>$2,440.55 USD</span></div>
+      <div class="wallet-addr">
+        <span class="addr-text">0x4f2a...d8c3</span>
+        <span class="copy-btn" onclick="copyAddr()">⎘</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <div class="qa-btn qa-send" onclick="openModal()">
+        <div class="qa-icon">↑</div>
+        <div class="qa-label">SEND</div>
+      </div>
+      <div class="qa-btn qa-receive" onclick="showToast('Receive address copied!')">
+        <div class="qa-icon">↓</div>
+        <div class="qa-label">RECEIVE</div>
+      </div>
+      <div class="qa-btn qa-swap" onclick="showToast('Swap coming soon!')">
+        <div class="qa-icon">⇌</div>
+        <div class="qa-label">SWAP</div>
+      </div>
+      <div class="qa-btn qa-stake" onclick="showPage('stake',null)">
+        <div class="qa-icon">◎</div>
+        <div class="qa-label">STAKE</div>
+      </div>
+    </div>
+
+    <div class="sec-title">Assets</div>
+    <div class="tokens">
+      <div class="token-item">
+        <div class="token-icon" style="background:linear-gradient(135deg,#0085FF22,#4DA2FF22);border:1px solid #4DA2FF33;">◈</div>
+        <div class="token-info">
+          <div class="token-name">SUI</div>
+          <div class="token-bal">1,284.50 SUI</div>
+        </div>
+        <div class="token-right">
+          <div class="token-usd">$2,312.10</div>
+          <div class="token-change pos">▲ +5.2%</div>
+        </div>
+      </div>
+      <div class="token-item">
+        <div class="token-icon" style="background:linear-gradient(135deg,#00d4aa22,#00d4aa11);border:1px solid #00d4aa33;">◉</div>
+        <div class="token-info">
+          <div class="token-name">USDC</div>
+          <div class="token-bal">128.45 USDC</div>
+        </div>
+        <div class="token-right">
+          <div class="token-usd">$128.45</div>
+          <div class="token-change pos">▲ +0.1%</div>
+        </div>
+      </div>
+      <div class="token-item">
+        <div class="token-icon" style="background:linear-gradient(135deg,#ff6b3522,#ff6b3511);border:1px solid #ff6b3533;">◑</div>
+        <div class="token-info">
+          <div class="token-name">CETUS</div>
+          <div class="token-bal">2,500 CETUS</div>
+        </div>
+        <div class="token-right">
+          <div class="token-usd">$18.75</div>
+          <div class="token-change neg">▼ -2.1%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title">Recent Activity</div>
+    <div class="txns">
+      <div class="txn-item txn-received">
+        <div class="txn-icon">↓</div>
+        <div class="txn-info">
+          <div class="txn-type">Received SUI</div>
+          <div class="txn-hash">0xb4e2...f910 <span class="txn-status status-ok">✓ confirmed</span></div>
+        </div>
+        <div class="txn-right">
+          <div class="txn-amount pos">+50.00</div>
+          <div class="txn-time">2 min ago</div>
+        </div>
+      </div>
+      <div class="txn-item txn-contract">
+        <div class="txn-icon">◈</div>
+        <div class="txn-info">
+          <div class="txn-type">Contract Call</div>
+          <div class="txn-hash">wallet_auth::transfer <span class="txn-status status-ok">✓ confirmed</span></div>
+        </div>
+        <div class="txn-right">
+          <div class="txn-amount" style="color:var(--sui);">-0.0002</div>
+          <div class="txn-time">1 hr ago</div>
+        </div>
+      </div>
+      <div class="txn-item txn-sent">
+        <div class="txn-icon">↑</div>
+        <div class="txn-info">
+          <div class="txn-type">Sent SUI</div>
+          <div class="txn-hash">0xa1c3...7f44 <span class="txn-status status-ok">✓ confirmed</span></div>
+        </div>
+        <div class="txn-right">
+          <div class="txn-amount neg">-25.00</div>
+          <div class="txn-time">3 hrs ago</div>
+        </div>
+      </div>
+      <div class="txn-item txn-contract">
+        <div class="txn-icon">◈</div>
+        <div class="txn-info">
+          <div class="txn-type">Token Swap</div>
+          <div class="txn-hash">dex::swap_exact_input <span class="txn-status status-ok">✓ confirmed</span></div>
+        </div>
+        <div class="txn-right">
+          <div class="txn-amount" style="color:var(--sui);">-0.0003</div>
+          <div class="txn-time">Yesterday</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NFTs PAGE -->
+  <div id="page-nfts" class="page">
+    <div class="sec-title" style="padding-top:8px;">My NFTs (4)</div>
+    <div class="nfts">
+      <div class="nft-card">
+        <div class="nft-img" style="background:linear-gradient(135deg,#0d1f3c,#1a3a6e);">🌊</div>
+        <div class="nft-info"><div class="nft-name">SuiOcean #042</div><div class="nft-col">SuiOcean</div></div>
+      </div>
+      <div class="nft-card">
+        <div class="nft-img" style="background:linear-gradient(135deg,#1a0a2e,#3d1a6e);">⚡</div>
+        <div class="nft-info"><div class="nft-name">SuiZap #118</div><div class="nft-col">SuiPunks</div></div>
+      </div>
+      <div class="nft-card">
+        <div class="nft-img" style="background:linear-gradient(135deg,#0a1f0a,#1a4a1a);">🌿</div>
+        <div class="nft-info"><div class="nft-name">MoveForest #7</div><div class="nft-col">MoveForest</div></div>
+      </div>
+      <div class="nft-card">
+        <div class="nft-img" style="background:linear-gradient(135deg,#1f0a0a,#4a1a1a);">🔥</div>
+        <div class="nft-info"><div class="nft-name">SuiFlame #221</div><div class="nft-col">SuiFlames</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAKE PAGE -->
+  <div id="page-stake" class="page">
+    <div class="sec-title" style="padding-top:8px;">Validators</div>
+    <div class="stake-card">
+      <div class="stake-card-header">
+        <div><div class="validator-name">◈ Mysten Labs</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Top validator · Commission 0%</div></div>
+        <div style="text-align:right;"><div class="apy-label">APY</div><div class="validator-apy">6.8%</div></div>
+      </div>
+      <div class="stake-stats">
+        <div class="stake-stat"><div class="stake-stat-label">Staked</div><div class="stake-stat-val">125.0</div></div>
+        <div class="stake-stat"><div class="stake-stat-label">Rewards</div><div class="stake-stat-val" style="color:var(--accent);">+4.72</div></div>
+        <div class="stake-stat"><div class="stake-stat-label">Epoch</div><div class="stake-stat-val">14h left</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+      <button class="btn-stake" onclick="showToast('Staked 10 SUI successfully!')">Stake More SUI</button>
+    </div>
+    <div class="stake-card">
+      <div class="stake-card-header">
+        <div><div class="validator-name">◉ Chorus One</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Established · Commission 5%</div></div>
+        <div style="text-align:right;"><div class="apy-label">APY</div><div class="validator-apy">6.2%</div></div>
+      </div>
+      <div class="stake-stats">
+        <div class="stake-stat"><div class="stake-stat-label">Staked</div><div class="stake-stat-val">0.00</div></div>
+        <div class="stake-stat"><div class="stake-stat-label">Rewards</div><div class="stake-stat-val" style="color:var(--accent);">+0.00</div></div>
+        <div class="stake-stat"><div class="stake-stat-label">Min Stake</div><div class="stake-stat-val">1 SUI</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:55%"></div></div>
+      <button class="btn-stake" onclick="showToast('Stake UI coming soon!')">Stake SUI</button>
+    </div>
+  </div>
+
+  <!-- CONTRACTS PAGE -->
+  <div id="page-contracts" class="page">
+    <div class="sec-title" style="padding-top:8px;">Deployed Move Contracts</div>
+    <div class="contract-card">
+      <div class="contract-header"><div class="contract-dot"></div><div class="contract-name">wallet_auth.move</div></div>
+      <div class="contract-desc">Handles wallet ownership verification and secure token transfer authorization using Move's object-centric model.</div>
+      <div class="contract-tags"><span class="ctag">authentication</span><span class="ctag">transfer</span><span class="ctag">testnet</span></div>
+    </div>
+    <div class="contract-card">
+      <div class="contract-header"><div class="contract-dot"></div><div class="contract-name">token_transfer.move</div></div>
+      <div class="contract-desc">Optimized SUI token transfer contract. Reduces gas by ~20% using efficient object passing and shared state minimization.</div>
+      <div class="contract-tags"><span class="ctag">gas-optimized</span><span class="ctag">SUI coin</span><span class="ctag">deployed</span></div>
+    </div>
+    <div class="contract-card">
+      <div class="contract-header"><div class="contract-dot" style="background:#a855f7;box-shadow:0 0 8px #a855f7;"></div><div class="contract-name">nft_mint.move</div></div>
+      <div class="contract-desc">NFT minting module using Sui's native object model. Supports metadata, collection limits, and royalty enforcement.</div>
+      <div class="contract-tags"><span class="ctag">NFT</span><span class="ctag">object model</span><span class="ctag">royalties</span></div>
+    </div>
+    <div class="contract-card">
+      <div class="contract-header"><div class="contract-dot" style="background:#ff6b35;box-shadow:0 0 8px #ff6b35;"></div><div class="contract-name">gas_estimator.move</div></div>
+      <div class="contract-desc">On-chain gas estimation helper. Calculates expected gas fees before transaction submission for UX transparency.</div>
+      <div class="contract-tags"><span class="ctag">gas estimation</span><span class="ctag">utility</span><span class="ctag">UX</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="showPage('wallet',null,this)"><div class="nav-icon">◈</div><div class="nav-label">WALLET</div></div>
+  <div class="nav-item" onclick="showPage('nfts',null,this)"><div class="nav-icon">◻</div><div class="nav-label">NFTS</div></div>
+  <div class="nav-item" onclick="showPage('stake',null,this)"><div class="nav-icon">◎</div><div class="nav-label">STAKE</div></div>
+  <div class="nav-item" onclick="showPage('contracts',null,this)"><div class="nav-icon">⬡</div><div class="nav-label">MOVE</div></div>
+</div>
+
+<script>
+const pages=['wallet','nfts','stake','contracts'];
+function showPage(id,tabEl,navEl){
+  pages.forEach(p=>{
+    const el=document.getElementById('page-'+p);
+    if(el)el.classList.toggle('active',p===id);
+  });
+  if(tabEl){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tabEl.classList.add('active');
+  }
+  if(navEl){
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+}
+
+function openModal(){document.getElementById('sendModal').classList.add('show');}
+function closeModal(){document.getElementById('sendModal').classList.remove('show');}
+
+function updateGas(){
+  const amt=parseFloat(document.getElementById('sendAmt').value)||0;
+  const gas=(0.0002+amt*0.000001).toFixed(5);
+  document.getElementById('gasEst').textContent='~'+gas+' SUI';
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent='✓ '+msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function copyAddr(){showToast('Address copied to clipboard!');}
+
+function sendTxn(){
+  const addr=document.getElementById('toAddr').value;
+  const amt=document.getElementById('sendAmt').value;
+  if(!addr||!amt){showToast('Please fill all fields');return;}
+  closeModal();
+  showToast('Transaction submitted successfully!');
+  document.getElementById('toAddr').value='';
+  document.getElementById('sendAmt').value='';
+}
+
+document.getElementById('sendModal').addEventListener('click',function(e){
+  if(e.target===this)closeModal();
+});
+</script>
+</body>
+</html>
